@@ -7,7 +7,7 @@ import { VueUseComponentsResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // base: '/dist/',
+  base: '/dist/',
   plugins: [
     vue(),
     Components({

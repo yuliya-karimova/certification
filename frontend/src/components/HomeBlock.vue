@@ -15,33 +15,45 @@
     </div>
 
     <!-- анализ -->
-    <div class="flex flex-col gap-4">
-      <h2 class="text-xl md:text-3xl text-primary-800 font-mont">
-        Введите текст требования для проверки:
-      </h2>
-      <BaseTextarea
-        v-model="requirement"
-        placeholder="Текст требования"
-        class="w-full text-left"
-        name="description"
-        rows="10"
-      />
-      <!-- <div class="mb-12">
-        <BaseButton theme="primary" @click="checkUseCase"> Проверить корректность </BaseButton>
-      </div> -->
+    <div class="flex flex-col gap-12">
+      <div class="space-y-6">
+        <div class="space-y-2">
+          <h2 class="text-xl md:text-3xl text-primary-800 font-mont">
+            Введите текст требования для проверки:
+          </h2>
+          <BaseTextarea
+            v-model="requirement"
+            placeholder="Текст требования"
+            class="w-full text-left"
+            name="description"
+            rows="10"
+          />
+        </div>
+        <div class="space-y-2">
+          <h2 class="text-xl md:text-3xl text-primary-800 font-mont">Или загрузите файл:</h2>
+          <FileInput @uploaded="onFileUpload" />
+        </div>
+      </div>
+      <div class="mb-12">
+        <BaseButton theme="primary" :disabled="!requirement" @click="checkUseCase">
+          Проверить корректность
+        </BaseButton>
+      </div>
 
       <!-- временный блок -->
-      <div class="flex items-center gap-4 flex-wrap">
-        <BaseButton theme="primary" @click="checkUseCase"> Проверить корректность </BaseButton>
+      <!-- <div class="flex gap-4 items-start flex-col">
+        <BaseButton theme="primary" :disabled="!requirement" @click="checkUseCase">
+          Проверить корректность
+        </BaseButton>
 
-        <BaseButton theme="primary" @click="checkObjects">
+        <BaseButton theme="primary" :disabled="!requirement" @click="checkObjects">
           Проверить наличие объектов, подлежащих сертифицированию
         </BaseButton>
 
-        <BaseButton theme="primary" @click="checkRegulations">
+        <BaseButton theme="primary" :disabled="!requirement" @click="checkRegulations">
           Проверить соответствие регламентам
         </BaseButton>
-      </div>
+      </div> -->
       <!-- временный блок -->
 
       <!-- результаты -->
@@ -49,11 +61,11 @@
         <div v-if="checkResult.useCase">
           <div class="text-3xl font-bold text-accent-500 mb-6">Проверка на корректность</div>
           <MarkdownBlock :content="checkResult.useCase" />
-          <!-- <div class="mt-12">
+          <div class="mt-12">
             <BaseButton theme="primary" @click="checkObjects">
               Проверить наличие объектов, подлежащих сертифицированию
             </BaseButton>
-          </div> -->
+          </div>
         </div>
 
         <div v-if="checkResult.objects">
@@ -61,47 +73,44 @@
             Наличие объектов, подлежащих сертифицированию
           </div>
           <MarkdownBlock :content="checkResult.objects" />
-          <!-- <div class="mt-12">
+          <div class="mt-12">
             <BaseButton theme="primary" @click="checkRegulations">
               Проверить соответствие регламентам
             </BaseButton>
-          </div> -->
+          </div>
         </div>
 
         <div v-if="checkResult.regulations">
           <div class="text-3xl font-bold text-accent-500">Соответствие регламентам</div>
           <MarkdownBlock :content="checkResult.regulations" />
         </div>
+
+        <div v-if="excelUrl && docxUrl && pdfUrl && !isChecking">
+          <div class="text-xl font-bold text-accent-500 mb-4">
+            Также можно скачать результаты проверки в PDF и Docx:
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Ссылка для скачивания DOCX -->
+            <a :href="docxUrl" target="_blank" download>
+              <BaseButton theme="primary"> Скачать DOCX </BaseButton>
+            </a>
+            <!-- Ссылка для скачивания PDF -->
+            <a :href="pdfUrl" target="_blank" download>
+              <BaseButton theme="primary"> Скачать PDF </BaseButton>
+            </a>
+            <!-- Ссылка для скачивания excel -->
+            <a v-if="excelUrl" :href="excelUrl" target="_blank" download>
+              <BaseButton theme="secondary"> Скачать отчет Excel </BaseButton>
+            </a>
+          </div>
+        </div>
+
         <div v-if="isChecking" class="flex gap-6 items-center">
           <BaseSpinner />
           <div>{{ checkingText }}</div>
         </div>
       </div>
     </div>
-
-    <!-- уточнения? -->
-    <!-- <div class="flex flex-col gap-4" v-if="checkResult">
-      <h2 class="text-xl md:text-3xl text-primary-800 font-mont">Есть уточнения?</h2>
-      <div class="flex flex-col gap-4">
-        <div v-for="(item, index) in dialog" :key="index">
-          <span class="font-bold">{{ `${item.role}: ` }}</span>
-          <span>{{ item.content }}</span>
-        </div>
-        <BaseTextarea
-          v-model="dialogNewMessage"
-          placeholder="Задай вопрос"
-          class="w-full text-left"
-          name="description"
-          rows="5"
-        />
-        <div>
-          <BaseButton theme="secondary" @click="correct"> Уточнить </BaseButton>
-        </div>
-        <div v-if="isDialogLoading">
-          <BaseSpinner />
-        </div>
-      </div>
-    </div> -->
   </div>
 </template>
 
@@ -112,10 +121,10 @@ import BaseSpinner from '@/components/base/BaseSpinner.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseButton from '@/components/base/button/BaseButton.vue'
 import MarkdownBlock from '@/components/MarkdownBlock.vue'
-// import { DialogItem } from '@/models/dialog'
+import FileInput from '@/components/FileInput.vue'
 
 const requirement = ref('')
-// const checkDialog = ref<DialogItem[]>([])
+const fileName = ref('')
 
 const isChecking = ref<boolean>(false)
 const checkingText = ref('')
@@ -125,15 +134,43 @@ const checkResult = reactive({
   regulations: ''
 })
 
+const docxUrl = ref('')
+const pdfUrl = ref('')
+const excelUrl = ref('')
+
+const clearReports = () => {
+  checkResult.useCase = ''
+  checkResult.objects = ''
+  checkResult.regulations = ''
+
+  docxUrl.value = ''
+  pdfUrl.value = ''
+  excelUrl.value = ''
+}
+
 const checkStore = useCheckStore()
+
+const onFileUpload = (text: string, fileNameValue: string) => {
+  clearReports()
+
+  requirement.value = text
+  fileName.value = fileNameValue
+}
 
 const checkUseCase = async () => {
   isChecking.value = true
   checkingText.value = 'Проверяем use case на корректность'
 
-  const response = await checkStore.checkUseCase(requirement.value)
+  if (!fileName.value) {
+    fileName.value = checkStore.getUuid()
+  }
 
-  checkResult.useCase = response
+  const response = await checkStore.checkUseCase(requirement.value, fileName.value)
+
+  checkResult.useCase = response.full_text
+  docxUrl.value = checkStore.getDownloadLink(response.docx_url)
+  pdfUrl.value = checkStore.getDownloadLink(response.pdf_url)
+
   isChecking.value = false
 }
 
@@ -141,9 +178,12 @@ const checkObjects = async () => {
   isChecking.value = true
   checkingText.value = 'Проверяем наличие объектов, подлежащих сертифицированию'
 
-  const response = await checkStore.checkObjects(requirement.value)
+  const response = await checkStore.checkObjects(requirement.value, fileName.value)
 
-  checkResult.objects = response
+  checkResult.objects = response.full_text
+  docxUrl.value = checkStore.getDownloadLink(response.docx_url)
+  pdfUrl.value = checkStore.getDownloadLink(response.pdf_url)
+
   isChecking.value = false
 }
 
@@ -151,39 +191,18 @@ const checkRegulations = async () => {
   isChecking.value = true
   checkingText.value = 'Проверяем соответстврие регламентам'
 
-  const response = await checkStore.checkRegulations(requirement.value)
+  const response = await checkStore.checkRegulations(requirement.value, fileName.value)
 
-  checkResult.regulations = response
+  checkResult.regulations = response.full_text
+  docxUrl.value = checkStore.getDownloadLink(response.docx_url)
+  pdfUrl.value = checkStore.getDownloadLink(response.pdf_url)
+
+  if (response.excel_url) {
+    excelUrl.value = checkStore.getDownloadLink(response.excel_url)
+  }
+
   isChecking.value = false
+
+  fileName.value = ''
 }
-
-// const dialog = ref<DialogItem[]>([])
-// const isDialogLoading = ref<boolean>(false)
-// const dialogNewMessage = ref('')
-
-// const checkRequirement = async () => {
-//   isUseCaseChecking.value = true
-
-//   checkDialog.value.push({ role: 'user', content: requirement.value })
-
-//   const response = await checkStore.check(checkDialog.value)
-
-//   checkDialog.value.push({ role: 'system', content: response })
-
-//   checkResult.value = response
-//   isUseCaseChecking.value = false
-// }
-
-// const correct = async () => {
-//   isDialogLoading.value = true
-
-//   dialog.value.push({ role: 'user', content: dialogNewMessage.value })
-
-//   const response = await reportStore.correct([...checkDialog.value, ...dialog.value])
-
-//   dialog.value.push({role: 'system', content: response })
-
-//   isDialogLoading.value = false
-//   dialogNewMessage.value = ''
-// }
 </script>

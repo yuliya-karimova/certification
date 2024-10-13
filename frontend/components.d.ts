@@ -18,6 +18,7 @@ declare module 'vue' {
     BaseSelect: typeof import('./src/components/base/BaseSelect.vue')['default']
     BaseSpinner: typeof import('./src/components/base/BaseSpinner.vue')['default']
     BaseTextarea: typeof import('./src/components/base/BaseTextarea.vue')['default']
+    FileInput: typeof import('./src/components/FileInput.vue')['default']
     HomeBlock: typeof import('./src/components/HomeBlock.vue')['default']
     MarkdownBlock: typeof import('./src/components/MarkdownBlock.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
