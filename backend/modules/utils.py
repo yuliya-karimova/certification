@@ -138,6 +138,7 @@ def read_from_file(user_folder, filename):
 
 # Функция для генерации и возврата файлов (DOCX и PDF)
 def generate_and_return_files(user_folder, user_id):
+    print(user_folder)
     # Читаем результаты предыдущих шагов
     use_case_result = read_from_file(user_folder, 'use_case.txt')
     regulation_objects_result = read_from_file(user_folder, 'regulation_objects.txt')
@@ -156,8 +157,8 @@ def generate_and_return_files(user_folder, user_id):
     create_pdf_file(full_text, pdf_file_path)
 
     # Возвращаем ссылки на файлы для скачивания
-    docx_url = f"/temp/{user_id}/report.docx"
-    pdf_url = f"/temp/{user_id}/report.pdf"
+    docx_url = f"/{user_folder}/report.docx"
+    pdf_url = f"/{user_folder}/report.pdf"
 
     return docx_url, pdf_url, full_text
 
